@@ -50,6 +50,18 @@ Interpret the coefficient of `income`.
 
 Write a sentence to your smart-but-not-mathematical boss which explains the association of income with preference for the Democratic candidate. Include a notion of uncertainty.
 
+```{r}
+logistic_mod <- logistic_reg() %>%
+  set_engine("glm")
+
+logistic_fit <- fit(logistic_mod,
+                    factor(vote) ~ ideology + gender + race,
+                    data = nes)
+logistic_fit$fit %>%
+  tidy(conf.int = TRUE) %>%
+  select(term, estimate, conf.low, conf.high)
+  
+```
 
 
 # Scene 2
@@ -66,6 +78,29 @@ Write two sentences explaining to your smart-but-not-mathematical boss what the 
 
 Optional: Can you write a simple dplr pipe which does, more or less, what the CART is doing, at least for the first node, and then confirms the numbers in the plot?
 
+```{r}
+
+tree_mod <-decision_tree() %>%
+  set_engine("rpart",
+             model = TRUE) %>%
+  set_mode("classification")
+
+vote_tree <- fit(tree_mod,
+                 vote ~ ideology + gender + race + income,
+                 data = nes)
+
+vote_tree$fit %>%
+  prp(extra = 6, varlen = 0, faclen = 0)
+vote_tree
+
+
+vote_tree <- fit(update(tree_mod, cost_complexity = 0.0),
+                 vote ~ ideology + income + gender + race, 
+                 data = nes)
+
+vote_tree$fit %>%
+  prp(extra = 6, varlen = 0, faclen = 0)
+```
 
 
 
@@ -81,6 +116,23 @@ How many trees did the forest use? Would we get better results if we used a diff
 
 What is OOB error?
 
+
+```{r}
+forest_mod <- rand_forest() %>%
+  set_engine("randomForest") %>%
+  set_mode("classification")
+
+vote_forest <- fit(forest_mod,
+                   vote ~ ideology + income + gender + race,
+                   data = nes)
+vote_forest
+
+tibble(`Error rate` = vote_forest$fit$err.rate[, "OOB"],
+       Trees = 1:500) %>%
+  ggplot(aes(x = Trees, y = `Error rate`)) +
+  geom_line() +
+  theme_classic()
+```
 
 
 # Scene 4
@@ -99,6 +151,11 @@ Note:
 Accuracy = (Actual 1 as 1 + Actual 0 as 0) / n
 Sensitivity = The proportion of actual 1s classified as 1
 Specificity = The proportion of actual 0s classified as 0
+
+```{r}
+
+
+```
 
 
 
